@@ -973,6 +973,9 @@ async def get_scraping_sources():
 
 @app.post("/events")
 async def add_event(event: Event, db: Session = Depends(get_db)):
+    # Ensure location fields are present and valid
+    if not event.location or event.location.latitude is None or event.location.longitude is None:
+        raise HTTPException(status_code=400, detail="Location must include latitude and longitude.")
     db_event = EventDB(
         id=event.id,
         name=event.title,
@@ -1008,4 +1011,4 @@ async def list_db_events(db: Session = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)    curl http://localhost:8000/db-events
+    uvicorn.run(app, host="0.0.0.0", port=8000)
