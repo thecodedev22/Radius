@@ -25,8 +25,6 @@ async def serve_ui():
     with open(html_path, "r") as f:
         return f.read()
 
-## ...existing code...
-
 # Models
 class Location(BaseModel):
     latitude: float
@@ -973,6 +971,41 @@ async def get_scraping_sources():
         ]
     }
 
+@app.post("/events")
+async def add_event(event: Event, db: Session = Depends(get_db)):
+    db_event = EventDB(
+        id=event.id,
+        name=event.title,
+        description=event.description,
+        url=event.url,
+        latitude=event.location.latitude,
+        longitude=event.location.longitude,
+        start_time=event.start_time,
+        end_time=event.start_time,  # You can add end_time to Event if needed
+        source=event.source,
+    )
+    db.add(db_event)
+    db.commit()
+    return {"status": "success", "event_id": event.id}
+
+@app.get("/db-events")
+async def list_db_events(db: Session = Depends(get_db)):
+    db_events = db.query(EventDB).all()
+    result = []
+    for ev in db_events:
+        result.append({
+            "id": ev.id,
+            "name": ev.name,
+            "description": ev.description,
+            "url": ev.url,
+            "latitude": ev.latitude,
+            "longitude": ev.longitude,
+            "start_time": ev.start_time.isoformat() if ev.start_time else None,
+            "end_time": ev.end_time.isoformat() if ev.end_time else None,
+            "source": ev.source
+        })
+    return result
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)    curl http://localhost:8000/db-events
